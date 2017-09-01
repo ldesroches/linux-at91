@@ -1906,6 +1906,8 @@ static int usba_start(struct usba_udc *udc)
 	unsigned long flags;
 	int ret;
 
+	printk("~~~~~ usba_start ~~~~~\n");
+
 	ret = start_clock(udc);
 	if (ret)
 		return ret;
@@ -1976,8 +1978,10 @@ static int atmel_usba_start(struct usb_gadget *gadget,
 
 	mutex_lock(&udc->vbus_mutex);
 
-	if (gpio_is_valid(udc->vbus_pin))
+	if (gpio_is_valid(udc->vbus_pin)) {
+		//irq_set_irq_type(gpio_is_valid(udc->vbus_pin), IRQ_TYPE_EDGE_BOTH);
 		enable_irq(gpio_to_irq(udc->vbus_pin));
+	}
 
 	/* If Vbus is present, enable the controller and wait for reset */
 	udc->vbus_prev = vbus_is_present(udc);
@@ -2361,7 +2365,7 @@ static int usba_udc_probe(struct platform_device *pdev)
 					IRQ_NOAUTOEN);
 			ret = devm_request_threaded_irq(&pdev->dev,
 					gpio_to_irq(udc->vbus_pin), NULL,
-					usba_vbus_irq_thread, IRQF_ONESHOT,
+					usba_vbus_irq_thread, IRQF_ONESHOT | IRQ_TYPE_EDGE_BOTH,
 					"atmel_usba_udc", udc);
 			if (ret) {
 				udc->vbus_pin = -ENODEV;

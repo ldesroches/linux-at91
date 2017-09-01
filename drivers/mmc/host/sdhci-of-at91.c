@@ -187,11 +187,34 @@ static int sdhci_at91_set_clks_presets(struct device *dev)
 	 */
 	clk_prepare_enable(priv->hclock);
 	caps0 = readl(host->ioaddr + SDHCI_CAPABILITIES);
+	caps0 &= (~SDHCI_CLOCK_V3_BASE_MASK);
+	caps0 |= ((24 << SDHCI_CLOCK_BASE_SHIFT) & SDHCI_CLOCK_V3_BASE_MASK);
+	caps1 = readl(host->ioaddr + SDHCI_CAPABILITIES_1);
+	caps1 &= (~SDHCI_CLOCK_MUL_MASK);
+	caps1 |= ((19 << SDHCI_CLOCK_MUL_SHIFT) & SDHCI_CLOCK_MUL_MASK);
+
+
+		/* Set capabilities in r/w mode. */
+		//writel(SDMMC_CACR_KEY | SDMMC_CACR_CAPWREN,
+		//       host->ioaddr + SDMMC_CACR);
+		//writel(caps1, host->ioaddr + SDHCI_CAPABILITIES_1);
+
+		//writel(caps0, host->ioaddr + SDHCI_CAPABILITIES);
+		/* Set capabilities in ro mode. */
+		//writel(0, host->ioaddr + SDMMC_CACR);
+
+
+	caps0 = readl(host->ioaddr + SDHCI_CAPABILITIES);
 	caps1 = readl(host->ioaddr + SDHCI_CAPABILITIES_1);
 	clk_base = (caps0 & SDHCI_CLOCK_V3_BASE_MASK) >> SDHCI_CLOCK_BASE_SHIFT;
+	printk("----- clk_base %u -----\n", clk_base);
+	//clk_base = 24;
 	clk_mul = (caps1 & SDHCI_CLOCK_MUL_MASK) >> SDHCI_CLOCK_MUL_SHIFT;
+	printk("----- clk_mul %u -----\n", clk_mul);
 	gck_rate = clk_base * 1000000 * (clk_mul + 1);
+	printk("----- gck_rate %u -----\n", gck_rate);
 	ret = clk_set_rate(priv->gck, gck_rate);
+	//ret = clk_set_rate(priv->gck, 480000000);
 	if (ret < 0) {
 		dev_err(dev, "failed to set gck");
 		clk_disable_unprepare(priv->hclock);
